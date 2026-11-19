@@ -23,7 +23,7 @@
 | TRAP-08 | 会员前导零 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/intake/rules.py` | `tests/test_intake.py::test_member_leading_zero` |
 | TRAP-04 | 重复表头 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/intake/rules.py` | `tests/test_intake.py::test_repeated_header` |
 | TRAP-05 | 缺列记录 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/intake/rules.py` | `tests/test_intake.py::test_column_bad` |
-| TRAP-14 | 编号冲突 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/intake/rules.py` | `tests/test_intake.py::test_duplicate_conflict` |
+| TRAP-14 | 编号冲突 | 静默错算或证据丢失 | 先到暂行采信、后到隔离待核、复核指定替代 | `app/modules/intake/reader.py` | `tests/test_intake.py::test_duplicate_conflict`、`tests/test_attribution.py` |
 | TRAP-18 | 空态 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/intake/rules.py` | `tests/test_intake.py::test_empty_three` |
 | TRAP-07 | 哨兵 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/policy/rules.py` | `tests/test_policy.py::test_sentinel_real` |
 | TRAP-11 | UTC归一 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/policy/rules.py` | `tests/test_policy.py::test_utc_real` |
@@ -33,6 +33,10 @@
 ## 对账规则
 
 原始逻辑输入=采纳行+隔离行+空行+重复表头+同值重复。业务计算按 DATA-DICTIONARY.md 分别核验，不能把上级与下级重复加总。所有隔离保留编号、原值、原始行号和稳定原因码。
+
+## 归属规则
+
+同一事件编号多来源原值冲突：先到行暂行采信，结算不停摆；后到行隔离待核，不覆盖原依据。`POST /api/runs/{run_id}/attribution` 指定归属行后，被替代行记 SUPERSEDED，决定随上下文进入批次摘要生成新批次，旧批次与原始快照保留可恢复。每条接受、替代、待核记录均带原始行号与依据，重放同输入结果不变。
 
 ## 已知不覆盖
 

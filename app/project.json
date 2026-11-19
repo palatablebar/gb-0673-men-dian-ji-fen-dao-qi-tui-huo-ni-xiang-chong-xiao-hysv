@@ -33,6 +33,9 @@
   ],
   "labels": {
     "id": "事件号",
+    "decision": "归属",
+    "basis": "依据",
+    "publish": "发布状态",
     "member": "会员号",
     "type": "类型",
     "points": "积分",

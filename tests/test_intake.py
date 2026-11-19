@@ -19,8 +19,11 @@ def test_column_bad(sample):
     # TRAP-05
     assert next(x for x in sample['quarantine'] if x['id']=='BADCOL')['code']=='COLUMN_COUNT'
 def test_duplicate_conflict(sample):
-    # TRAP-14
-    assert len([x for x in sample['quarantine'] if x['code']=='DUPLICATE_CONFLICT'])==2
+    # TRAP-14：同号冲突先到暂行采信、后到隔离待核，结算不停摆
+    dup=[x for x in sample['attribution'] if x['id']=='DUP']
+    assert [(x['decision'],x['line']) for x in dup]==[('接受',53),('待核',54)]
+    assert next(x for x in sample['quarantine'] if x['code']=='DUPLICATE_CONFLICT')['line']==54
+    assert next(r for r in sample['records'] if r['id']=='DUP')['_line']==53
 def test_empty_three():
     # TRAP-18
     for text,code in [('', 'EMPTY_FILE'),('\n\n','BLANK_FILE'),((ROOT/'sample_data/clean.csv').read_text().splitlines()[0]+'\n','HEADER_ONLY')]:

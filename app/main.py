@@ -44,6 +44,20 @@ def review(run_id:str,payload:dict=Body(...)):
     revision=payload.get('revision')
     if not isinstance(revision,int) or revision<1: raise BusinessError('BAD_REVISION','版本号须为正整数')
     return store.review(DB_PATH,run_id,revision)
+@app.post('/api/runs/{run_id}/attribution')
+def attribute(run_id:str,payload:dict=Body(...)):
+    event_id=payload.get('id');line=payload.get('line');revision=payload.get('revision')
+    if not isinstance(event_id,str) or not event_id.strip(): raise BusinessError('BAD_ATTRIBUTION','归属决定须含事件编号')
+    if not isinstance(line,int) or line<1: raise BusinessError('BAD_ATTRIBUTION','归属行号须为正整数')
+    if not isinstance(revision,int) or revision<1: raise BusinessError('BAD_REVISION','版本号须为正整数')
+    previous=store.get(DB_PATH,run_id)
+    if previous['revision']!=revision: raise BusinessError('STALE_VERSION','复核版本已更新，请刷新',409)
+    if 'input_snapshot' not in previous: raise BusinessError('INPUT_SNAPSHOT_MISSING','旧批缺少源快照，请重新导入')
+    decisions=dict(previous['input_snapshot']['context'].get('attribution',{}))
+    decisions[event_id.strip()]=line
+    result=evaluate({'dataset':previous['source'],'overrides':{'attribution':decisions}},snapshot=previous['input_snapshot'])
+    result['manifest']['derived_from']=run_id
+    return store.save(DB_PATH,result)
 @app.get('/api/export/{run_id}')
 def export(run_id:str):
     result=store.get(DB_PATH,run_id)
